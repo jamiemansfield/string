@@ -11,6 +11,7 @@ buildscript {
 
 apply plugin: 'java'
 apply plugin: 'groovy'
+apply plugin: 'maven'
 apply plugin: 'net.minecrell.licenser'
 
 sourceCompatibility = '1.8'
@@ -44,6 +45,14 @@ processResources {
     from 'LICENSE.txt'
 }
 
+javadoc {
+    options.encoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+    options.links(
+            'https://docs.oracle.com/javase/8/docs/api/'
+    )
+}
+
 task javadocJar(type: Jar, dependsOn: 'javadoc') {
     from javadoc.destinationDir
     classifier = 'javadoc'
@@ -57,4 +66,72 @@ task sourcesJar(type: Jar, dependsOn: 'classes') {
 artifacts {
     archives javadocJar
     archives sourcesJar
+}
+
+if (project.hasProperty('ossrhUsername') && project.hasProperty('ossrhPassword')) {
+    apply plugin: 'signing'
+    signing {
+        required { !version.endsWith('-SNAPSHOT') && gradle.taskGraph.hasTask(tasks.uploadArchives) }
+        sign configurations.archives
+    }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            // Maven Central
+            if (project.hasProperty('ossrhUsername') && project.hasProperty('ossrhPassword')) {
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+                repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2/') {
+                    authentication(userName: ossrhUsername, password: ossrhPassword)
+                }
+
+                snapshotRepository(url: 'https://oss.sonatype.org/content/repositories/snapshots/') {
+                    authentication(userName: ossrhUsername, password: ossrhPassword)
+                }
+            }
+
+            pom {
+                artifactId = project.archivesBaseName
+
+                project {
+                    name = project.name
+                    description = project.description
+                    packaging = 'jar'
+                    url = project.url
+                    inceptionYear = project.inceptionYear
+
+                    scm {
+                        url = 'https://github.com/jamiemansfield/string'
+                        connection = 'scm:git:https://github.com/jamiemansfield/string.git'
+                        developerConnection = 'scm:git:git@github.com:jamiemansfield/string.git'
+                    }
+
+                    issueManagement {
+                        system = 'GitHub'
+                        url = 'https://github.com/jamiemansfield/string/issues'
+                    }
+
+                    licenses {
+                        license {
+                            name = 'MIT License'
+                            url = 'https://opensource.org/licenses/MIT'
+                            distribution = 'repo'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = 'jamierocks'
+                            name = 'Jamie Mansfield'
+                            email = 'dev@jamierocks.uk'
+                            url = 'https://www.jamiemansfield.me/'
+                            timezone = 'Europe/London'
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
