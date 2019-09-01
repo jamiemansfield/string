@@ -129,6 +129,7 @@ public class StringReader {
     /**
      * Gets the character at the current index and offset, and increments the index by the offset.
      *
+     * @param offset The offset of the character
      * @return The character
      */
     public char advance(final int offset) {
