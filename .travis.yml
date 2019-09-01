@@ -4,12 +4,10 @@ language: java
 jdk:
   - oraclejdk8
 
-script:
-  - ./gradlew build
-  - ./gradlew jacocoTestReport
+script: ./gradlew build
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
   - '[[ "$TRAVIS_BRANCH" = "develop" ]] && ./gradlew uploadArchives'
+  - codecov
 
 # Ugh.
 notifications:
